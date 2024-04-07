@@ -4,5 +4,7 @@ def augmenter_factory(config):
     augmenter = config['augmenter']
     if augmenter == NormalAugmenter.code():
         return NormalAugmenter(config['feature_size'], config['alpha_scale'], config['beta_scale'])
+    elif augmenter == 'CosMo':
+        return None
     else:
         raise ValueError("{} not exists".format(augmenter))

@@ -31,7 +31,7 @@ class ValidationMetricsCalculator:
         self._calculate_similarity_matrix()
         # Filter query_feat == target_feat
         assert self.similarity_matrix.shape == self.ref_attribute_matching_matrix.shape
-        self.similarity_matrix[self.ref_attribute_matching_matrix == True] = self.similarity_matrix.min()
+        self.similarity_matrix[self.ref_attribute_matching_matrix == True] = self.similarity_matrix.min() # make ref images in test set to min so that it could not be selected as a target image?
         return self._calculate_recall_at_k()
 
     def _calculate_similarity_matrix(self) -> torch.tensor:
@@ -51,14 +51,22 @@ class ValidationMetricsCalculator:
         topk_attribute_matching = np.take_along_axis(self.attribute_matching_matrix, self.most_similar_idx.numpy(),
                                                      axis=1)
 
+        true_indices_ref, true_indices_test = None, None
         for k in self.top_k:
             query_matched_vector = topk_attribute_matching[:, :k].sum(axis=1).astype(bool)
             self.recall_positive_queries_idxs[k] = list(np.where(query_matched_vector > 0)[0])
             num_correct = query_matched_vector.sum()
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
+
+            # # For visualize the ref + text -> test / target
+            # # true_indices_ref = list(np.where(query_matched_vector > 0)[0])
+            # true_indices_ref = [110]
+            # matched_matrix = self.similarity_matrix[true_indices_ref]
+            # true_indices_test = matched_matrix.topk(20, dim=1)[1].tolist()[0]
+
         recall_results = average_meter_set.averages()
-        return recall_results
+        return recall_results, [true_indices_ref, true_indices_test]
 
     @staticmethod
     def _multiple_index_from_attribute_list(attribute_list, indices):

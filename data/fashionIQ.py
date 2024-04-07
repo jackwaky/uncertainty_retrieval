@@ -15,6 +15,10 @@ def _get_img_caption_json(dataset_root, clothing_type, split):
     return img_caption_data
 
 def _get_img_caption_txt(dataset_root, clothing_type, split):
+    # if split == 'val':
+    #     with open(os.path.join(dataset_root, 'captions_pairs', 'ambiguous_fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
+    #         file_content = f.readlines()
+    # else:
     with open(os.path.join(dataset_root, 'captions_pairs', 'fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
         file_content = f.readlines()
     return file_content

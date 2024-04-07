@@ -18,7 +18,7 @@ class NormalAugmenter(nn.Module):
         beta = self.beta_scale * normal_beta.sample([features.shape[1]]).transpose(-1, -2)
 
         features = self.instance_norm(features)
-        x = alpha * features +  beta
+        x = alpha * features +  beta #todo: Uncertainty Modeling
         return x
 
     @classmethod

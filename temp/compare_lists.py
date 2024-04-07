@@ -1,0 +1,37 @@
+import os
+import shutil
+
+# List of image file names
+# # Proper text images
+# image_names = ["B00CF2X97M", "B00BYI7ZQO", "B00CLF4QKC", "B00CJHLBFK", "B00F4MZB7G", "B0081TP5FM", "B00BPCXXIS", "B00BAHX7Z2", "B00F8KXFHW", "B0094KQ1NC", "B00AT8CQIM", "B00BQMJP6Q", "B008BHSSMG", "B004T20EFG", "B006362580", "B00G49G488", "B0050SCUXC", "B006LQCT6K", "B00ANK6ND0", "B008ATJYUU", "B00B2JJ15S", "B008YIG3DI", "B00G6TRZE8", "B00BXMPQZI", "B005YB2S5K", "B00B8RAZE0", "B005XKDZ5Y", "B008BM17HY", "B00AD11VKO", "B0089CNC92", "B00COB4DF6", "B007XD4IMS", "B009G0RL4I", "B008IGRUCE", "B009S5XX0M", "B00EOW7882", "B008006FK6", "B00ABSUHMC", "B00870UVRC", "B0065U2ZPW", "B00AA95P56", "B00CCC0B1C", "B006OR8A6E", "B007IGI8D0", "B009HMQOP2", "B009VUUMBW", "B0080E53WI", "B002VLJSQI", "B008FY9HPW", "B005PP424A"]
+# parapharsed text images
+# image_names = ["B00BYI7ZQO", "B00CF2X97M", "B00CLF4QKC", "B0081TP5FM", "B00BPCXXIS", "B00CJHLBFK", "B00F8KXFHW", "B009HMQOP2", "B008G0ERA0", "B006362580", "B00AA95P56", "B008BM17HY", "B005XKDZ5Y", "B00G6TRZE8", "B00F4MZB7G", "B007IGI8D0", "B00AT8CQIM", "B008ATJYUU", "B007ZOGQIO", "B009VUUMBW", "B005YB2S5K", "B00BXMPQZI", "B00DRF4NGW", "B008QW7GOW", "B004ZY06UQ", "B00G49G488", "B00B2JJ15S", "B0070L9U6M", "B0065U2ZPW", "B009JY687M", "B005PP424A", "B008YIG3DI", "B006LQCT6K", "B00ANK6ND0", "B00H2FUGOQ", "B0097B5ABC", "B008006FK6", "B009S5XX0M", "B00ABSUHMC", "B00BAHX7Z2", "B00C2G1HCA", "B00BSNJOS2", "B0077M7ZUM", "B005JR0XW4", "B0089CNC92", "B00A0I6GSC", "B00DC01APO", "B008KYNQBI", "B009X6E9E0", "B0095JQTLQ"]
+
+# MGUR + proper
+# image_names = ["B00DC01APO", "B008IGRUCE", "B009VUUMBW", "B009HMQOP2", "B00CLF4QKC", "B004RKVGDY", "B0081TP5FM", "B00BXMPQZI", "B002VLJSQI", "B008BM17HY", "B009X6E9E0", "B00F4MZB7G", "B00C2BIUXO", "B002OEYH3Q", "B003M4Z9OS", "B008G0ERA0", "B00ABSUHMC", "B00385IQY6", "B009XJMTSA", "B004NAU396", "B00DM0REWC", "B003VTQA1K", "B002RHPBO4", "B005JR0XW4", "B008RCSALO", "B00BYI7ZQO", "B007R1YUI8", "B003L13FTI", "B00CF3BFWM", "B004T20EFG", "B00B5KMPA2", "B006UCPRSC", "B00AA6F0GI", "B00EPSQ458", "B00D5UJAOY", "B00CF2X97M", "B00CFMLTCY", "B008QW7GOW", "B0071GD9D6", "B00CQBL6NG", "B00F8KXFHW", "B00BTMWMYU", "B006XZAOR0", "B007FF4S10", "B00BVGHQKO", "B00AA95P56", "B005UASDM2", "B009JY687M", "B009G0RL4I", "B00C2MGB6G"]
+
+# MGUR + ambiguous + paraphrased
+image_names = ["B00BYI7ZQO", "B00CLF4QKC", "B00G6TRZE8", "B00BXMPQZI", "B00B7Q9ZDO", "B00AYLAFOG", "B00BAHX7Z2", "B00ANK6ND0", "B007G3N9CU", "B00F4MZB7G", "B008YIG3DI", "B00870UVRC", "B00CF2X97M", "B00AA95P56", "B002HEWD7A", "B00CTT51MC", "B00CL0UK0C", "B00BPCXXIS", "B00C2G1HCA", "B009LGLIIC"]
+
+
+
+
+if __name__ == '__main__':
+    # Path to the folder containing the image files
+    folder_path = '/home/jaehyun98/git/uncertain_retrieval/data/fashionIQ/image_data/dress'
+
+    # Output folder to save matched images
+    output_folder = './temp/images_MGUR_proper+para/'
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Iterate over the image names and copy the corresponding files
+    for image_name in image_names:
+        image_path = os.path.join(folder_path, f"{image_name}.jpg")
+        if os.path.exists(image_path):
+            output_path = os.path.join(output_folder, f"{image_name}.jpg")
+            shutil.copy(image_path, output_path)
+            print(f"Image {image_name}.jpg saved to {output_path}")
+        else:
+            print(f"Image {image_name}.jpg not found in the folder")

@@ -9,7 +9,7 @@
     "text_feature_size": 512,
     "stride": true,
     "image_encoder": "resnet50_layer4",
-    "text_encoder": "roberta",
+    "text_encoder": "lstm",
     "compositor": "transformer",
     "norm_scale": 4,
     "optimizer": "SGD",

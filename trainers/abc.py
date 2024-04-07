@@ -115,6 +115,14 @@ class AbstractBaseTrainer(ABC):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.start_epoch = kwargs['start_epoch'] if 'start_epoch' in kwargs else 0
 
+        # self.load_model()
+    def load_model(self):
+        model_path = './experiments/augment_text_fashionIQ_2024-03-22_1/best.pth'
+        dict_of_models = torch.load(model_path)['model_state_dict']
+        keys = dict_of_models.keys()
+        for key in keys:
+            self.models[key].load_state_dict(dict_of_models[key])
+
     def train_one_epoch(self, epoch) -> dict:
         raise NotImplementedError
 

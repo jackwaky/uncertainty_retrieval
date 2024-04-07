@@ -53,7 +53,7 @@ class BatchBasedAleatoricLoss(AbstractBaseMetricLoss):
         # batch based classification loss of ref feature
         L_info = BatchBasedClassificationLoss.cal_loss(ref_features, tar_features)
         gamma = np.exp(- self.gamma_scale * epoch / self.total_epoch)
-        return gamma * L_u + (1 - gamma) * L_info
+        return gamma * L_u + (1 - gamma) * L_info  #todo: Uncertainty Regularization
 
     @classmethod
     def code(cls):

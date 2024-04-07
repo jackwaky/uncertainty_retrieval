@@ -36,9 +36,40 @@ class AbstractBaseEvaluator(abc.ABC):
         recall_calculator = ValidationMetricsCalculator(all_original_query_features, all_composed_query_features,
                                                         all_test_features, self.attribute_matching_matrix,
                                                         self.ref_matching_matrix, self.top_k)
-        recall_results = recall_calculator()
+        recall_results, true_indices = recall_calculator()
         all_results.update(recall_results)
         print(all_results)
+
+        # ####################################################
+        # # For Visualization : ref + text -> test / target
+        # import json
+        # # print(indices_of_true)
+        # # indices_of_true = [110, 111]
+        # matched_ref_attributes = [all_ref_attributes[idx] for idx in true_indices[0]]
+        # matched_target_attributes = [all_query_attributes[idx] for idx in true_indices[0]]
+        # matched_test_attributes = [all_test_attributes[idx] for idx in true_indices[1]]
+        #
+        # # print(f'{matched_ref_attributes}\n')
+        # # print(f'{matched_target_attributes}\n')
+        # # print(f'{matched_test_attributes}\n')
+        # dictionary = {}
+        # # dictionary['indices_of_true'] = indices_of_true.tolist()
+        # dictionary['true_indices_ref'] = [int(x) for x in true_indices[0]]
+        # dictionary['true_indices_test'] = [int(x) for x in true_indices[1]]
+        # dictionary['matched_ref_attributes'] = matched_ref_attributes
+        # dictionary['matched_target_attributes'] = matched_target_attributes
+        # dictionary['matched_test_attributes'] = matched_test_attributes
+        #
+        # file_path = './log/MGUR_top20_ambiguous_paraphrased_text.json'
+        #
+        # with open(file_path, 'w') as json_file:
+        #     json.dump(dictionary, json_file)
+        #
+        #
+        # exit(0)
+        # ####################################################
+
+        # exit(0)
 
         return all_results, recall_calculator
 

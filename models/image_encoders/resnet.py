@@ -3,7 +3,7 @@ from typing import Tuple, Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet18, resnet50
+from torchvision.models import resnet18, resnet50, ResNet50_Weights
 
 from trainers.abc import AbstractBaseImageLowerEncoder, AbstractBaseImageUpperEncoder
 
@@ -62,7 +62,8 @@ class GAPResNet18Layer4Upper(AbstractBaseImageUpperEncoder):
 class ResNet50Layer4Lower(AbstractBaseImageLowerEncoder):
     def __init__(self, pretrained=True, stride=False):
         super().__init__()
-        self._model = resnet50(pretrained=pretrained)
+        # self._model = resnet50(pretrained=pretrained)
+        self._model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         # avg pooling to global pooling
         if stride == True:
             self._model.layer4[0].downsample[0].stride = (1,1)

@@ -33,12 +33,12 @@ def main():
     best_metric_key = [key for key in summary_keys if '10' in key][0]
     val_loggers = [WandbSimplePrinter('val/'), WandbSummaryPrinter('best_', summary_keys),
                    BestModelTracker(export_root, metric_key=best_metric_key)]
-    evaluators = {key: get_evaluator_cls(configs)(models, value, top_k=configs['topk']) 
+    evaluators = {key: get_evaluator_cls(configs)(models, value, configs, top_k=configs['topk'])
                   for key, value in test_dataloaders.items()}
-    train_evaluators = {key: get_evaluator_cls(configs)(models, value, top_k=configs['topk'])
+    train_evaluators = {key: get_evaluator_cls(configs)(models, value, configs, top_k=configs['topk'])
                        for key, value in train_val_dataloaders.items()}
     trainer = get_trainer_cls(configs)(models, train_dataloader, criterions, optimizers, lr_schedulers,
-                                       configs['epoch'], train_loggers, val_loggers, evaluators, train_evaluators,
+                                       configs['epoch'], train_loggers, val_loggers, evaluators, train_evaluators, configs,
                                        start_epoch=0)
     trainer.run()
 

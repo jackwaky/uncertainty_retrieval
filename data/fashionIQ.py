@@ -14,13 +14,17 @@ def _get_img_caption_json(dataset_root, clothing_type, split):
         img_caption_data = json.load(json_file)
     return img_caption_data
 
-def _get_img_caption_txt(dataset_root, clothing_type, split):
-    # if split == 'val':
-    #     with open(os.path.join(dataset_root, 'captions_pairs', 'ambiguous_fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
-    #         file_content = f.readlines()
-    # else:
-    with open(os.path.join(dataset_root, 'captions_pairs', 'fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
-        file_content = f.readlines()
+def _get_img_caption_txt(dataset_root, clothing_type, split, config):
+    if config['ambiguity']:
+        if split == 'val':
+            with open(os.path.join(dataset_root, 'captions_pairs', 'ambiguous_fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
+                file_content = f.readlines()
+        else:
+            with open(os.path.join(dataset_root, 'captions_pairs', 'fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
+                file_content = f.readlines()
+    else:
+        with open(os.path.join(dataset_root, 'captions_pairs', 'fashion_iq-{}-cap-{}.txt'.format(split, clothing_type))) as f:
+            file_content = f.readlines()
     return file_content
 
 def _get_img_split_json_as_list(dataset_root, clothing_type, split):
@@ -86,7 +90,7 @@ class FashionIQDataset(AbstractBaseFashionIQDataset):
     """
 
     def __init__(self, root_path=_DEFAULT_FASHION_IQ_DATASET_ROOT, clothing_type='dress', split='train',
-                 img_transform=None, text_transform=None, id_transform=None):
+                 img_transform=None, text_transform=None, id_transform=None, config=None):
         super().__init__(root_path, split, img_transform, text_transform)
         self.root_path = root_path
         self.img_root_path = os.path.join(self.root_path, 'image_data')
@@ -95,11 +99,12 @@ class FashionIQDataset(AbstractBaseFashionIQDataset):
         self.img_transform = img_transform
         self.text_transform = text_transform
         self.id_transform = id_transform
-        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split)
+        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split, config)
         self.ref_img_path = np.array([ff.strip().split(';')[0] for ff in self.img_caption_data])
         self.targ_img_path = np.array([ff.strip().split(';')[1] for ff in self.img_caption_data])
         self.caps = [ff.strip('\n').split(';')[-1] for ff in self.img_caption_data]
         self.caps_cat = _cat_captions(self.caps)
+        self.config = config
 
 
     def __getitem__(self, idx):
@@ -133,7 +138,7 @@ class FashionIQTestDataset(AbstractBaseFashionIQDataset):
     """
 
     def __init__(self, root_path=_DEFAULT_FASHION_IQ_DATASET_ROOT, clothing_type='dress', split='val',
-                 img_transform=None, text_transform=None):
+                 img_transform=None, text_transform=None, config=None):
         super().__init__(root_path, split, img_transform, text_transform)
         self.root_path = root_path
         self.img_root_path = os.path.join(self.root_path, 'image_data')
@@ -144,7 +149,7 @@ class FashionIQTestDataset(AbstractBaseFashionIQDataset):
         #self.img_list = _get_img_split_json_as_list(root_path, clothing_type, split)
 
         ''' Uncomment below for VAL Evaluation method '''
-        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split)
+        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split, config)
         self.img_list = []
         for d in self.img_caption_data:
             ref = d.split(';')[0].split('/')[-1].split('.')[0] #dress/xxx.jpg --> xxx
@@ -173,7 +178,7 @@ class FashionIQTestQueryDataset(AbstractBaseFashionIQDataset):
         """
 
     def __init__(self, root_path=_DEFAULT_FASHION_IQ_DATASET_ROOT, clothing_type='dress', split='val',
-                 img_transform=None, text_transform=None):
+                 img_transform=None, text_transform=None, config=None):
         super().__init__(root_path, split, img_transform, text_transform)
         self.root_path = root_path
         self.img_root_path = os.path.join(self.root_path, 'image_data')
@@ -181,7 +186,7 @@ class FashionIQTestQueryDataset(AbstractBaseFashionIQDataset):
         self.img_transform = img_transform
         self.text_transform = text_transform
 
-        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split)
+        self.img_caption_data = _get_img_caption_txt(root_path, clothing_type, split, config)
         self.ref_img_path = np.array([ff.strip().split(';')[0] for ff in self.img_caption_data])
         self.targ_img_path = np.array([ff.strip().split(';')[1] for ff in self.img_caption_data])
         self.caps = [ff.strip('\n').split(';')[-1] for ff in self.img_caption_data]

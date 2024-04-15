@@ -1,5 +1,5 @@
 {
-    "epoch": 60,
+    "epoch": 1,
     "batch_size": 32,
     "num_workers": 16,
     "metric_loss": "batch_based_aleatoric_loss",
@@ -34,6 +34,9 @@
     "augmenter": "normal_gaussian",
     "alpha_scale": 1,
     "beta_scale": 1,
-    "mode": "train",
-    "visualize": false
+    "mode": "eval",
+    "model_path": "./experiments/test_fashionIQ_2024-03-20_1/best.pth",
+    "ambiguity": false,
+    "visualize": true,
+    "visualized_image_idx": [18]
 }

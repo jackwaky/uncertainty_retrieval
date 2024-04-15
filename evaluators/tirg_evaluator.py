@@ -2,8 +2,8 @@ from evaluators.abc import AbstractBaseEvaluator
 
 
 class SimpleEvaluator(AbstractBaseEvaluator):
-    def __init__(self, models, dataloaders, top_k=(1, 10, 50)):
-        super().__init__(models, dataloaders, top_k)
+    def __init__(self, models, dataloaders, configs, top_k=(1, 10, 50)):
+        super().__init__(models, dataloaders, configs, top_k)
         self.lower_image_encoder = self.models['lower_image_encoder']
         self.upper_image_encoder = self.models['upper_image_encoder']
         self.text_encoder = self.models['text_encoder']

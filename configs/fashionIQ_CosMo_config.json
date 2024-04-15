@@ -33,5 +33,7 @@
     "experiment_description": "bert",
     "augmenter": "CosMo",
     "alpha_scale": 1,
-    "beta_scale": 1
+    "beta_scale": 1,
+    "mode": "train",
+    "visualize": false
 }

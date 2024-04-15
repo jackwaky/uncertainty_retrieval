@@ -23,7 +23,7 @@ def train_dataset_factory(transforms, config):
         # concat subsets of FashionIQ      
         fashionIQ_datasets  = [
             FashionIQDataset(split='train', clothing_type=clothing_type, img_transform=image_transform,
-                                text_transform=text_transform)
+                                text_transform=text_transform, config=config)
             for clothing_type in FashionIQDataset.all_subset_codes()
             ]
         dataset = torch.utils.data.ConcatDataset(fashionIQ_datasets)
@@ -49,9 +49,9 @@ def test_dataset_factory(transforms, config, split='val'):
         for clothing_type in FashionIQDataset.all_subset_codes():
             test_datasets['fashionIQ_' + clothing_type] = {
                 "samples": FashionIQTestDataset(split=split, clothing_type=clothing_type,
-                                                img_transform=image_transform, text_transform=text_transform),
+                                                img_transform=image_transform, text_transform=text_transform, config=config),
                 "query": FashionIQTestQueryDataset(split=split, clothing_type=clothing_type,
-                                                img_transform=image_transform, text_transform=text_transform)
+                                                img_transform=image_transform, text_transform=text_transform, config=config)
             }
 
     elif ShoesDataset.code() in dataset_code:

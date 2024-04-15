@@ -101,7 +101,7 @@ class AbstractGlobalStyleTransformer(nn.Module, abc.ABC):
 
 class AbstractBaseTrainer(ABC):
     def __init__(self, models, train_dataloader, criterions, optimizers, lr_schedulers, num_epochs,
-                 train_loggers, val_loggers, evaluators, train_evaluator, *args, **kwargs):
+                 train_loggers, val_loggers, evaluators, train_evaluator, configs, *args, **kwargs):
         self.models = models
         self.train_dataloader = train_dataloader
         self.criterions = criterions
@@ -114,10 +114,13 @@ class AbstractBaseTrainer(ABC):
         self.train_evaluator = train_evaluator
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.start_epoch = kwargs['start_epoch'] if 'start_epoch' in kwargs else 0
+        self.configs = configs
 
-        # self.load_model()
+        if configs['mode'] == 'eval':
+            self.load_model()
     def load_model(self):
-        model_path = './experiments/augment_text_fashionIQ_2024-03-22_1/best.pth'
+        # model_path = './experiments/CosMo_2024-04-03_0/best.pth'
+        model_path = self.configs['model_path']
         dict_of_models = torch.load(model_path)['model_state_dict']
         keys = dict_of_models.keys()
         for key in keys:
@@ -129,7 +132,8 @@ class AbstractBaseTrainer(ABC):
     def run(self) -> dict:
         self._load_models_to_device()
         for epoch in range(self.start_epoch, self.num_epochs):
-            for phase in ['train', 'val']:
+            phases = ['train', 'val'] if self.configs["mode"] == "train" else ['val']
+            for phase in phases:
                 if phase == 'train':
                     self._to_train_mode()
                     train_results = self.train_one_epoch(epoch)
@@ -140,7 +144,7 @@ class AbstractBaseTrainer(ABC):
                     all_val_results = {}
                     for key, evaluator in self.evaluators.items():
                         print('results on ' + key)
-                        val_results, _ = evaluator.evaluate(epoch)
+                        val_results, _ = evaluator.evaluate(epoch, key)
                         for i in val_results.items():
                             all_val_results[key + '_' + i[0]] = i[1]                       
 

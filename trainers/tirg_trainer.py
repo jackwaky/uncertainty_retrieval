@@ -64,22 +64,22 @@ class TIRGTrainer(AbstractBaseTrainer):
 
             for b in range(sample_size):
                 with torch.no_grad():
-                    loss_ls = [self.metric_loss(torch.unsqueeze(composed_ref_feature_list[j][b], dim=0), torch.unsqueeze(tar_feature_list[j][b], dim=0)) for j in range(self.num_models)]
+                    loss_ls = [self.metric_loss(torch.unsqueeze(composed_ref_feature_list[j][b], dim=0), tar_feature_list[j], b) for j in range(self.num_models)]
 
                 _, min_index_ls = torch.topk(-(torch.tensor(loss_ls)), 1)
 
                 for index in min_index_ls:
                     assgn_ls[index].append(b)
 
-            print(assgn_ls)
+            # print(assgn_ls)
 
             for m, assign in enumerate(assgn_ls):
                 if(len(assign)!=0):
 
                     if(len(assign)>1):
-                        loss = self.metric_loss(composed_ref_feature_list[m][assign], tar_feature_list[m][assign])
+                        loss = self.metric_loss(composed_ref_feature_list[m][assign], tar_feature_list[m][assign], None)
                     else:
-                        loss = self.metric_loss(torch.unsqueeze(composed_ref_feature_list[m][assign[0]], dim=0), torch.unsqueeze(tar_feature_list[m][assign[0]], dim=0))
+                        loss = self.metric_loss(torch.unsqueeze(composed_ref_feature_list[m][assign[0]], dim=0), torch.unsqueeze(tar_feature_list[m][assign[0]], dim=0), None)
 
                     loss.backward()
                     average_meter_set.update('loss', loss.item())

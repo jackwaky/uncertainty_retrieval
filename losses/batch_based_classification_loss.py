@@ -8,16 +8,19 @@ class BatchBasedClassificationLoss(AbstractBaseMetricLoss):
     def __init__(self):
         super().__init__()
 
-    def forward(self, ref_features, tar_features):
-        return self.cal_loss(ref_features, tar_features)
+    def forward(self, ref_features, tar_features, batch_idx):
+        return self.cal_loss(ref_features, tar_features, batch_idx)
 
     @classmethod
-    def cal_loss(cls, ref_features, tar_features):
+    def cal_loss(cls, ref_features, tar_features, batch_idx):
         batch_size = ref_features.size(0)
         device = ref_features.device
 
         pred = ref_features.mm(tar_features.transpose(0, 1))
-        labels = torch.arange(0, batch_size).long().to(device)
+        if batch_idx == None:
+            labels = torch.arange(0, batch_size).long().to(device)
+        else:
+            labels = torch.tensor([batch_idx]).long().to(device)
         return F.cross_entropy(pred, labels)
 
     @classmethod

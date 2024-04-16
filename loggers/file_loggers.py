@@ -5,8 +5,12 @@ import torch
 from trainers.abc import AbstractBaseLogger
 
 
-def _checkpoint_file_path(export_path, filename):
-    return os.path.join(export_path, filename)
+def _checkpoint_file_path(export_path, filename, idx):
+    save_path = os.path.join(export_path, str(idx))
+    print(save_path)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    return os.path.join(save_path, filename)
 
 
 def _set_up_path(path):
@@ -14,10 +18,10 @@ def _set_up_path(path):
         os.mkdir(path)
 
 
-def _save_state_dict_with_step(log_data, step, path, filename):
+def _save_state_dict_with_step(log_data, step, path, filename, model_idx):
     log_data = {k: v for k, v in log_data.items() if isinstance(v, dict)}
     log_data['step'] = step
-    torch.save(log_data, _checkpoint_file_path(path, filename))
+    torch.save(log_data, _checkpoint_file_path(path, filename, model_idx))
 
 
 class RecentModelTracker(AbstractBaseLogger):
@@ -43,23 +47,26 @@ class BestModelTracker(AbstractBaseLogger):
 
         self.best_value = -9e9
 
-    def log(self, log_data, step, commit=False):
-        recent_values = 0
-        num_values = 0
-        for i in log_data:
-            if self.metric_key not in i:
-                continue
-            recent_values += log_data[i]
-            num_values += 1
+    def log(self, log_data, step, model_idx, commit=False):
+        # recent_values = 0
+        # num_values = 0
+        # for i in log_data:
+        #     if self.metric_key not in i:
+        #         continue
+        #     recent_values += log_data[i]
+        #     num_values += 1
+        #
+        # if num_values < 1:
+        #     print("WARNING: The key: {} is not in logged data. Not saving best model".format(self.metric_key))
+        #     return
+        # recent_value = recent_values / num_values
+        # if self.best_value < recent_value:
+        #     self.best_value = recent_value
+        #     _save_state_dict_with_step(log_data, step, self.export_path, self.ckpt_filename)
+        #     print("Update Best {} Model at Step {} with value {}".format(self.metric_key, step, self.best_value))
 
-        if num_values < 1:
-            print("WARNING: The key: {} is not in logged data. Not saving best model".format(self.metric_key))
-            return
-        recent_value = recent_values / num_values
-        if self.best_value < recent_value:
-            self.best_value = recent_value
-            _save_state_dict_with_step(log_data, step, self.export_path, self.ckpt_filename)
-            print("Update Best {} Model at Step {} with value {}".format(self.metric_key, step, self.best_value))
+        _save_state_dict_with_step(log_data, step, self.export_path, self.ckpt_filename, model_idx)
+        print("Update Model at Step {}".format(step))
 
     def complete(self, *args, **kwargs):
         pass

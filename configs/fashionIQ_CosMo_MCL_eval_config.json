@@ -1,5 +1,5 @@
 {
-    "epoch": 60,
+    "epoch": 1,
     "batch_size": 32,
     "num_workers": 16,
     "metric_loss": "batch_based_classification_loss",
@@ -20,7 +20,7 @@
     "warmup_iters": 5,
     "gamma": 0.1,
     "lr_scheduler": "MultiStepWithWarmup",
-    "random_seed": -1,
+    "random_seed": 1000,
     "experiment_dir": "experiments",
     "num_heads": 8,
     "lr": 2e-2,
@@ -34,10 +34,12 @@
     "augmenter": "CosMo",
     "alpha_scale": 1,
     "beta_scale": 1,
-    "mode": "train",
+    "mode": "eval",
+
+    "num_models": 2,
+    "model_path": "./experiments/CosMo_MCL_2_2024-04-15_0/",
+
+    "ambiguity": true,
     "visualize": false,
-    "ambiguity": false,
-
-
-    "num_models": 2
+    "visualized_image_idx": [0,1,2]
 }

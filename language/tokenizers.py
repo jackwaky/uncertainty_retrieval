@@ -2,7 +2,7 @@ import string
 from typing import List
 
 import nltk
-nltk.download('punkt')
+# nltk.download('punkt')
 
 from language.vocabulary import AbstractBaseTokenizer
 

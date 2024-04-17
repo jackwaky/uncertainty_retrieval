@@ -8,9 +8,10 @@ from evaluators.metric_calculators import ValidationMetricsCalculator
 from evaluators.utils import multiple_index_from_attribute_list
 from utils.metrics import AverageMeterSet
 
-
+import shutil
+import os
 class AbstractBaseEvaluator(abc.ABC):
-    def __init__(self, models, dataloaders, top_k=(1, 10, 50)):
+    def __init__(self, models, dataloaders, configs, top_k=(1, 10, 50)):
         self.models = models
         self.test_samples_dataloader = dataloaders['samples']
         self.test_query_dataloader = dataloaders['query']
@@ -18,8 +19,9 @@ class AbstractBaseEvaluator(abc.ABC):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.attribute_matching_matrix = None
         self.ref_matching_matrix = None
+        self.configs = configs
 
-    def evaluate(self, epoch):
+    def evaluate(self, epoch, key):
         all_results = {}
         all_test_features, all_test_attributes = self.extract_test_features_and_attributes()
         all_original_query_features, all_composed_query_features, all_query_attributes, all_ref_attributes = \
@@ -35,41 +37,15 @@ class AbstractBaseEvaluator(abc.ABC):
 
         recall_calculator = ValidationMetricsCalculator(all_original_query_features, all_composed_query_features,
                                                         all_test_features, self.attribute_matching_matrix,
-                                                        self.ref_matching_matrix, self.top_k)
+                                                        self.ref_matching_matrix, self.top_k, self.configs)
         recall_results, true_indices = recall_calculator()
         all_results.update(recall_results)
         print(all_results)
 
-        # ####################################################
-        # # For Visualization : ref + text -> test / target
-        # import json
-        # # print(indices_of_true)
-        # # indices_of_true = [110, 111]
-        # matched_ref_attributes = [all_ref_attributes[idx] for idx in true_indices[0]]
-        # matched_target_attributes = [all_query_attributes[idx] for idx in true_indices[0]]
-        # matched_test_attributes = [all_test_attributes[idx] for idx in true_indices[1]]
-        #
-        # # print(f'{matched_ref_attributes}\n')
-        # # print(f'{matched_target_attributes}\n')
-        # # print(f'{matched_test_attributes}\n')
-        # dictionary = {}
-        # # dictionary['indices_of_true'] = indices_of_true.tolist()
-        # dictionary['true_indices_ref'] = [int(x) for x in true_indices[0]]
-        # dictionary['true_indices_test'] = [int(x) for x in true_indices[1]]
-        # dictionary['matched_ref_attributes'] = matched_ref_attributes
-        # dictionary['matched_target_attributes'] = matched_target_attributes
-        # dictionary['matched_test_attributes'] = matched_test_attributes
-        #
-        # file_path = './log/MGUR_top20_ambiguous_paraphrased_text.json'
-        #
-        # with open(file_path, 'w') as json_file:
-        #     json.dump(dictionary, json_file)
-        #
-        #
-        # exit(0)
-        # ####################################################
-
-        # exit(0)
+        # If Evaluation mode & want to Visualize the retrieved images
+        if self.configs['mode'] == 'eval' and self.configs['visualize']:
+            for image_idx in true_indices[0].keys():
+                self.save_retrieved_images(true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx)
 
         return all_results, recall_calculator
 
@@ -154,6 +130,35 @@ class AbstractBaseEvaluator(abc.ABC):
                 average_meter_set.update('recall_@{}'.format(k), correct)
         recall_results = average_meter_set.averages()
         return recall_results
+
+    def save_retrieved_images(self, true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx):
+        matched_ref_attributes = [all_ref_attributes[idx] for idx in true_indices[0][image_idx]]
+        matched_target_attributes = [all_query_attributes[idx] for idx in true_indices[0][image_idx]]
+        matched_test_attributes = [all_test_attributes[idx] for idx in true_indices[1][image_idx]]
+
+        domain = key.split('_')[-1]
+        image_file_path = f"./data/{self.configs['dataset']}/image_data/{domain}"
+        source_image_path = f'{image_file_path}/{matched_ref_attributes[0]}.jpg'
+        answer_image_path = f'{image_file_path}/{matched_target_attributes[0]}.jpg'
+        retrieved_image_path_list = [f'{image_file_path}/{retrieved_attribute}.jpg' for retrieved_attribute in
+                                     matched_test_attributes]
+
+        save_path = f"./visualize_result/{self.configs['experiment_description']}/{image_idx}"
+        source_image_save_path = save_path + f'/{domain}/source_image/'
+        answer_image_save_path = save_path + f'/{domain}/answer_image/'
+        retrieved_image_save_path = save_path + f'/{domain}/retrieved_images/'
+
+        for directory in [save_path, source_image_save_path, answer_image_save_path, retrieved_image_save_path]:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+        shutil.copy(source_image_path, source_image_save_path)
+        shutil.copy(answer_image_path, answer_image_save_path)
+        for idx, retrieved_image_path in enumerate(retrieved_image_path_list):
+            cur_attribute = retrieved_image_path.split('/')[-1]
+            changed_name = f'{idx}_{cur_attribute}'
+            cur_retrieved_image_save_path = os.path.join(retrieved_image_save_path, changed_name)
+            shutil.copy(retrieved_image_path, cur_retrieved_image_save_path)
 
     @staticmethod
     def _calculate_attribute_matching_matrix(all_query_attributes, all_test_attributes):

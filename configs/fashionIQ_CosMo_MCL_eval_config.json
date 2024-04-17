@@ -1,5 +1,5 @@
 {
-    "epoch": 60,
+    "epoch": 1,
     "batch_size": 32,
     "num_workers": 16,
     "metric_loss": "batch_based_classification_loss",
@@ -34,10 +34,12 @@
     "augmenter": "CosMo",
     "alpha_scale": 1,
     "beta_scale": 1,
-    "mode": "train",
+    "mode": "eval",
+
+    "num_models": 2,
+    "model_path": "./experiments/CosMo_MCL_2_2024-04-16_0/",
+
+    "ambiguity": true,
     "visualize": false,
-    "ambiguity": false,
-
-
-    "num_models": 2
+    "visualized_image_idx": [0,1,2]
 }

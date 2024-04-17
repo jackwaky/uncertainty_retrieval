@@ -7,7 +7,7 @@ class WandbSimplePrinter(AbstractBaseLogger):
     def __init__(self, prefix):
         self.prefix = prefix
 
-    def log(self, log_data, step, commit=False):
+    def log(self, log_data, step, model_idx, commit=False):
         log_metrics = {self.prefix + k: v for k, v in log_data.items() if not isinstance(v, dict)}
         wandb.log(log_metrics, step=step, commit=commit)
 
@@ -21,7 +21,7 @@ class WandbSummaryPrinter(AbstractBaseLogger):
         self.summary_keys = summary_keys
         self.previous_best_vals = {key: 0 for key in self.summary_keys}
 
-    def log(self, log_data, step, commit=False):
+    def log(self, log_data, step, model_idx, commit=False):
         for key in self.summary_keys:
             if key in log_data:
                 log_value = log_data[key]

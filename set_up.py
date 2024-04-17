@@ -80,6 +80,7 @@ def setup_experiment(config):
     config.update(device_info)
 
     random_seed = fix_random_seed_as(config['random_seed'])
+    # random_seed = config['random_seed']
     config['random_seed'] = random_seed
     export_root = create_experiment_export_folder(config['experiment_dir'], config['experiment_description'])
     export_config_as_json(config, export_root)

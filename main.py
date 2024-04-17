@@ -11,6 +11,8 @@ from set_up import setup_experiment
 from trainers import get_trainer_cls
 from transforms import image_transform_factory, text_transform_factory
 
+import torch
+
 
 def main():
     configs = get_experiment_config()
@@ -25,20 +27,22 @@ def main():
     train_dataloader, test_dataloaders, train_val_dataloaders = create_dataloaders(image_transform, text_transform,
                                                                                    configs)
     criterions = loss_factory(configs)
-    models = create_models(configs, vocabulary)
-    optimizers = create_optimizers(models=models, config=configs)
-    lr_schedulers = create_lr_schedulers(optimizers, config=configs)
+    models = [create_models(configs, vocabulary) for _ in range(configs["num_models"])]
+    optimizers = [create_optimizers(models=model, config=configs) for model in models]
+    lr_schedulers = [create_lr_schedulers(optimizer, config=configs) for optimizer in optimizers]
+    print(f"Number of ensemble models : {len(models)}")
+
     train_loggers = [WandbSimplePrinter('train/')]
     summary_keys = get_summary_keys(configs)
     best_metric_key = [key for key in summary_keys if '10' in key][0]
     val_loggers = [WandbSimplePrinter('val/'), WandbSummaryPrinter('best_', summary_keys),
                    BestModelTracker(export_root, metric_key=best_metric_key)]
-    evaluators = {key: get_evaluator_cls(configs)(models, value, top_k=configs['topk']) 
-                  for key, value in test_dataloaders.items()}
-    train_evaluators = {key: get_evaluator_cls(configs)(models, value, top_k=configs['topk'])
-                       for key, value in train_val_dataloaders.items()}
+    evaluators = [{key: get_evaluator_cls(configs)(model, value, configs, top_k=configs['topk'])
+                  for key, value in test_dataloaders.items()} for model in models]
+    train_evaluators = [{key: get_evaluator_cls(configs)(model, value, configs, top_k=configs['topk'])
+                       for key, value in train_val_dataloaders.items()} for model in models]
     trainer = get_trainer_cls(configs)(models, train_dataloader, criterions, optimizers, lr_schedulers,
-                                       configs['epoch'], train_loggers, val_loggers, evaluators, train_evaluators,
+                                       configs['epoch'], train_loggers, val_loggers, evaluators, train_evaluators, configs,
                                        start_epoch=0)
     trainer.run()
 

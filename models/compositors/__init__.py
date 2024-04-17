@@ -15,5 +15,5 @@ def transformer_factory(feature_sizes, configs):
 
     global_styler_code = configs['global_styler']
     global_styler = global_styler_factory(global_styler_code, feature_sizes['layer4'], text_feature_size)
-    return {'layer4': DisentangledTransformer(feature_sizes['layer4'], text_feature_size, num_heads=num_heads,
-                                              global_styler=global_styler)}
+    return {f'compositor_{i}': DisentangledTransformer(feature_sizes['layer4'], text_feature_size, num_heads=num_heads,
+                                              global_styler=global_styler) for i in range(configs["num_models"])}

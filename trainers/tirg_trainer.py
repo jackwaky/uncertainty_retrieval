@@ -9,22 +9,24 @@ from .abc import LoggingService
 
 class TIRGTrainer(AbstractBaseTrainer):
     def __init__(self, models, train_dataloader, criterions, optimizers, lr_schedulers, num_epochs,
-                 train_loggers, val_loggers, evaluators, *args, **kwargs):
+                 train_loggers, val_loggers, evaluators, train_evaluators, configs, *args, **kwargs):
         super().__init__(models, train_dataloader, criterions, optimizers, lr_schedulers, num_epochs,
-                         train_loggers, val_loggers, evaluators, *args, **kwargs)
-        self.lower_image_encoder = [model['lower_image_encoder'] for model in self.models]
-        self.upper_image_encoder = [model['upper_image_encoder'] for model in self.models]
-        self.text_encoder = [model['text_encoder'] for model in self.models]
-        self.text_fc = [model['text_fc'] for model in self.models] if 'text_fc' in self.models[0] else None
-        self.compositor = [model['layer4'] for model in self.models]
-        self.augmenter = [model['augmenter'] for model in self.models] if 'augmenter' in self.models[0] else None
+                         train_loggers, val_loggers, evaluators, train_evaluators, configs, *args, **kwargs)
+        self.num_models = configs["num_models"]
+        self.lower_image_encoder = models['lower_image_encoder']
+        self.upper_image_encoder = models['upper_image_encoder']
+        self.text_encoder = models['text_encoder']
+        self.text_fc = models['text_fc'] if 'text_fc' in self.models else None
+        self.compositor = [models[f'compositor_{model_idx}'] for model_idx in range(self.num_models)]
+        self.augmenter = models['augmenter'] if 'augmenter' in self.models else None
         self.metric_loss = self.criterions['metric_loss']
-        self.num_models = len(self.models)
+
 
         self.train_logging_service = LoggingService(train_loggers)
 
     def train_one_epoch(self, epoch):
         average_meter_set = {i : AverageMeterSet() for i in range(self.num_models)}
+        # average_meter_set = AverageMeterSet()
         train_dataloader = tqdm(self.train_dataloader, desc="Epoch {}".format(epoch))
 
         for batch_idx, (ref_images, tar_images, modifiers, len_modifiers, attn_mask) in enumerate(train_dataloader):
@@ -42,24 +44,24 @@ class TIRGTrainer(AbstractBaseTrainer):
             composed_ref_feature_list, tar_feature_list, augmented_tar_feature_list = [], [], []
             for i in range(self.num_models):
                 # Encode Target Images
-                tar_mid_features, _ = self.lower_image_encoder[i](tar_images)
-                tar_features = self.upper_image_encoder[i](tar_mid_features)
+                tar_mid_features, _ = self.lower_image_encoder(tar_images)
+                tar_features = self.upper_image_encoder(tar_mid_features)
 
                 # Encode and Fuse Reference Images with Texts
-                ref_mid_features, _ = self.lower_image_encoder[i](ref_images)
+                ref_mid_features, _ = self.lower_image_encoder(ref_images)
                 if self.text_fc != None:
                     attn_mask = attn_mask.to(self.device)
-                    text_features = self.text_encoder[i](modifiers, attn_mask)
-                    text_features = self.text_fc[i](text_features)
+                    text_features = self.text_encoder(modifiers, attn_mask)
+                    text_features = self.text_fc(text_features)
                 else:
-                    text_features = self.text_encoder[i](modifiers, len_modifiers)
+                    text_features = self.text_encoder(modifiers, len_modifiers)
 
                 composed_ref_features, _ = self.compositor[i](ref_mid_features, text_features)
-                composed_ref_features = self.upper_image_encoder[i](composed_ref_features)
+                composed_ref_features = self.upper_image_encoder(composed_ref_features)
 
                 # Add Gaussian noisy to feature and compute Loss
                 if self.augmenter != None:
-                    augmented_tar_features = self.augmenter[i](tar_features)
+                    augmented_tar_features = self.augmenter(tar_features)
                     augmented_tar_feature_list.append(augmented_tar_features)
 
                 composed_ref_feature_list.append(composed_ref_features)
@@ -97,18 +99,27 @@ class TIRGTrainer(AbstractBaseTrainer):
 
                     loss.backward()
                     average_meter_set[m].update('loss', loss.item())
-                    self._update_grad(model_idx=m)
+                    # if m == 0:
+            self._update_grad()
+                    # self._update_compositor_grad(model_idx=m)
 
-            # break
+            break
 
 
-        train_results = {i : average_meter_set[i].averages() for i in range(len(self.optimizers))}
-        # optimizers_dict = self._get_state_dicts(self.optimizers)
-        # for model_idx in optimizers_dict.keys():
-        for model_idx in range(len(self.optimizers)):
-            cur_optimizer_dict = self._get_state_dicts(self.optimizers[model_idx])
-            for key in cur_optimizer_dict.keys():
-                train_results[model_idx][key+'_lr'] = cur_optimizer_dict[key]["param_groups"][0]["lr"]
+        # train_results = {i : average_meter_set[i].averages() for i in range(self.num_models)}
+        # # optimizers_dict = self._get_state_dicts(self.optimizers)
+        # # for model_idx in optimizers_dict.keys():
+        # for model_idx in range(self.num_models):
+        #     cur_optimizer_dict = self._get_state_dicts(self.optimizers[model_idx])
+        #     for key in cur_optimizer_dict.keys():
+        #         train_results[model_idx][key+'_lr'] = cur_optimizer_dict[key]["param_groups"][0]["lr"]
+        # self._step_schedulers()
+
+        train_results = {i : average_meter_set[i].averages() for i in range(self.num_models)}
+        optimizers_dict = self._get_state_dicts(self.optimizers)
+        for model_idx in range(self.num_models):
+            for key in optimizers_dict.keys():
+                train_results[model_idx][key + '_lr'] = optimizers_dict[key]["param_groups"][0]["lr"]
         self._step_schedulers()
         return train_results
 

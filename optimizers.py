@@ -102,7 +102,9 @@ def create_optimizers(models, config):
     weight_decay = config['weight_decay']
     momentum = config['momentum']
 
+    # parameterized_models = {key: model for key, model in models.items() if ('compositor' not in key or key == f'compositor_{model_idx}') and len(list(model.parameters())) > 0}
     parameterized_models = {key: model for key, model in models.items() if len(list(model.parameters())) > 0}
+    # parameterized_models = {key: model for key, model in models.items() if len(list(model.parameters())) > 0}
 
     lr_dict = {key: lr for key in parameterized_models}
     assert 'text_encoder' and 'lower_image_encoder' and 'upper_image_encoder' in parameterized_models
@@ -119,6 +121,32 @@ def create_optimizers(models, config):
         optimizers = {key: RAdam(model.parameters(), lr=lr_dict[key], weight_decay=weight_decay)
                       for key, model in parameterized_models.items()}
     return optimizers
+
+# def create_compositor_optimizers(models, config, model_idx):
+#     optimizer = config['optimizer']
+#     lr = config['lr']
+#     weight_decay = config['weight_decay']
+#     momentum = config['momentum']
+#
+#     parameterized_models = {key: model for key, model in models.items() if key == f'compositor_{model_idx}' and len(list(model.parameters())) > 0}
+#
+#     # parameterized_models = {key: model for key, model in models.items() if len(list(model.parameters())) > 0}
+#
+#     lr_dict = {key: lr for key in parameterized_models}
+#     assert f'compositor_{model_idx}' in parameterized_models
+#     if config['text_encoder'] == 'roberta':
+#         lr_dict['text_encoder'] = lr * 0.01
+#
+#     if optimizer == 'Adam':
+#         optimizers = {key: Adam(model.parameters(), lr=lr_dict[key], weight_decay=weight_decay)
+#                       for key, model in parameterized_models.items()}
+#     elif optimizer == 'SGD':
+#         optimizers = {key: SGD(model.parameters(), lr=lr_dict[key], weight_decay=weight_decay, momentum=momentum, nesterov=False)
+#                       for key, model in parameterized_models.items()}
+#     elif optimizer == 'RAdam':
+#         optimizers = {key: RAdam(model.parameters(), lr=lr_dict[key], weight_decay=weight_decay)
+#                       for key, model in parameterized_models.items()}
+#     return optimizers
 
 
 def create_lr_schedulers(optimizers, config):

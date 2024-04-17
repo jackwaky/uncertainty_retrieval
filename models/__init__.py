@@ -25,6 +25,8 @@ def create_models(configs, vocabulary):
         models['text_fc'] = text_fc
     if augmenter != None:
         models['augmenter'] = augmenter
+
+    # models["compositor"] = compositors
     models.update(compositors)
 
     if configs['num_gpu'] > 1:

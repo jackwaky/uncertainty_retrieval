@@ -21,7 +21,9 @@ class AbstractBaseEvaluator(abc.ABC):
         self.ref_matching_matrix = None
         self.configs = configs
 
-    def evaluate(self, epoch, key):
+    def evaluate(self, epoch, key, model_idx):
+        self.model_idx = model_idx
+
         all_results = {}
         all_test_features, all_test_attributes = self.extract_test_features_and_attributes()
         all_original_query_features, all_composed_query_features, all_query_attributes, all_ref_attributes = \
@@ -103,7 +105,7 @@ class AbstractBaseEvaluator(abc.ABC):
                     attn_mask = attn_mask.to(self.device)
 
                 original_features, composed_features = \
-                    self._extract_original_and_composed_features(ref_images, modifiers, len_modifiers, attn_mask)
+                    self._extract_original_and_composed_features(ref_images, modifiers, len_modifiers, attn_mask, self.model_idx)
                 original_features = original_features.view(batch_size, -1).cpu()
                 composed_features = composed_features.view(batch_size, -1).cpu()
                 all_original_query_features.extend(original_features)

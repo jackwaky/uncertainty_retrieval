@@ -8,18 +8,18 @@ class SimpleEvaluator(AbstractBaseEvaluator):
         self.upper_image_encoder = self.models['upper_image_encoder']
         self.text_encoder = self.models['text_encoder']
         self.text_fc = self.models['text_fc'] if 'text_fc' in self.models else None
-        self.compositor = self.models['layer4']
+        self.compositor = [self.models[f'compositor_{model_idx}'] for model_idx in range(configs["num_models"])]
 
     def _extract_image_features(self, images):
         mid_features, _ = self.lower_image_encoder(images)
         return self.upper_image_encoder(mid_features)
 
-    def _extract_original_and_composed_features(self, images, modifiers, len_modifiers=None, attn_mask=None):
+    def _extract_original_and_composed_features(self, images, modifiers, len_modifiers=None, attn_mask=None, model_idx=None):
         mid_image_features, _ = self.lower_image_encoder(images)
         if self.text_fc != None:
             text_features = self.text_encoder(modifiers, attn_mask)
             text_features = self.text_fc(text_features)
         else:
             text_features = self.text_encoder(modifiers, len_modifiers)
-        composed_features, _ = self.compositor(mid_image_features, text_features)
+        composed_features, _ = self.compositor[model_idx](mid_image_features, text_features)
         return self.upper_image_encoder(mid_image_features), self.upper_image_encoder(composed_features)

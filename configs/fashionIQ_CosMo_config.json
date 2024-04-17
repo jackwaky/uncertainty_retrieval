@@ -20,7 +20,7 @@
     "warmup_iters": 5,
     "gamma": 0.1,
     "lr_scheduler": "MultiStepWithWarmup",
-    "random_seed": -1,
+    "random_seed": 1000,
     "experiment_dir": "experiments",
     "num_heads": 8,
     "lr": 2e-2,

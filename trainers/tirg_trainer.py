@@ -4,6 +4,7 @@ from trainers.abc import AbstractBaseTrainer
 from utils.metrics import AverageMeterSet
 
 import torch
+from .abc import LoggingService
 
 
 class TIRGTrainer(AbstractBaseTrainer):
@@ -20,8 +21,10 @@ class TIRGTrainer(AbstractBaseTrainer):
         self.metric_loss = self.criterions['metric_loss']
         self.num_models = len(self.models)
 
+        self.train_logging_service = LoggingService(train_loggers)
+
     def train_one_epoch(self, epoch):
-        average_meter_set = AverageMeterSet()
+        average_meter_set = {i : AverageMeterSet() for i in range(self.num_models)}
         train_dataloader = tqdm(self.train_dataloader, desc="Epoch {}".format(epoch))
 
         for batch_idx, (ref_images, tar_images, modifiers, len_modifiers, attn_mask) in enumerate(train_dataloader):
@@ -71,7 +74,18 @@ class TIRGTrainer(AbstractBaseTrainer):
                 for index in min_index_ls:
                     assgn_ls[index].append(b)
 
-            # print(assgn_ls)
+            # with torch.no_grad():
+            #      loss_ls = [self.metric_loss(composed_ref_feature_list[j], tar_feature_list[j], -1) for j in range(self.num_models)]
+            #
+            # for b in range(sample_size):
+            #     cur_loss_ls = [loss_ls[model_idx][1][b] for model_idx in range(self.num_models)]
+            #     _, min_index_ls = torch.topk(-(torch.tensor(cur_loss_ls)), 1)
+            #
+            #     for index in min_index_ls:
+            #         assgn_ls[index].append(b)
+
+            assgn_ls_log = {f"assign_model_{i}" : len(assgn_ls[i]) for i in range(len(assgn_ls))}
+            self.train_logging_service.log(assgn_ls_log, step=batch_idx + epoch * len(train_dataloader), model_idx=0)
 
             for m, assign in enumerate(assgn_ls):
                 if(len(assign)!=0):
@@ -82,17 +96,19 @@ class TIRGTrainer(AbstractBaseTrainer):
                         loss = self.metric_loss(torch.unsqueeze(composed_ref_feature_list[m][assign[0]], dim=0), torch.unsqueeze(tar_feature_list[m][assign[0]], dim=0), None)
 
                     loss.backward()
-                    average_meter_set.update('loss', loss.item())
+                    average_meter_set[m].update('loss', loss.item())
                     self._update_grad(model_idx=m)
 
             # break
 
 
-        train_results = average_meter_set.averages()
-        optimizers_dict = self._get_state_dicts(self.optimizers)
-        for model_idx in optimizers_dict.keys():
-            for key in optimizers_dict[model_idx].keys():
-                train_results[key+'_lr'] = optimizers_dict[model_idx][key]["param_groups"][0]["lr"]
+        train_results = {i : average_meter_set[i].averages() for i in range(len(self.optimizers))}
+        # optimizers_dict = self._get_state_dicts(self.optimizers)
+        # for model_idx in optimizers_dict.keys():
+        for model_idx in range(len(self.optimizers)):
+            cur_optimizer_dict = self._get_state_dicts(self.optimizers[model_idx])
+            for key in cur_optimizer_dict.keys():
+                train_results[model_idx][key+'_lr'] = cur_optimizer_dict[key]["param_groups"][0]["lr"]
         self._step_schedulers()
         return train_results
 

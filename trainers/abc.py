@@ -155,10 +155,10 @@ class AbstractBaseTrainer(ABC):
                             for i in val_results.items():
                                 all_val_results[model_idx][key + '_' + i[0]] = i[1]
 
-                        model_state_dicts = self._get_state_dicts(self.models)
-                        optimizer_state_dicts = self._get_state_dicts(self.optimizers)
-                        all_val_results[model_idx]['model_state_dict'] = model_state_dicts[model_idx]
-                        all_val_results[model_idx]['optimizer_state_dict'] = optimizer_state_dicts[model_idx]
+                        model_state_dicts = self._get_state_dicts(self.models[model_idx])
+                        optimizer_state_dicts = self._get_state_dicts(self.optimizers[model_idx])
+                        all_val_results[model_idx]['model_state_dict'] = model_state_dicts
+                        all_val_results[model_idx]['optimizer_state_dict'] = optimizer_state_dicts
                         self.val_logging_service.log(all_val_results, step=epoch, model_idx=model_idx, commit=True)
         return self.models
 
@@ -198,13 +198,12 @@ class AbstractBaseTrainer(ABC):
                 scheduler.step()
 
     def _get_state_dicts(self, dict_of_models):
-        state_dicts = {i : {} for i in range(self.num_models)}
-        for i in range(self.num_models):
-            for model_name, model in dict_of_models[i].items():
-                if isinstance(model, nn.DataParallel):
-                    state_dicts[i][model_name] = model.module.state_dict()
-                else:
-                    state_dicts[i][model_name] = model.state_dict()
+        state_dicts = {}
+        for model_name, model in dict_of_models.items():
+            if isinstance(model, nn.DataParallel):
+                state_dicts[model_name] = model.module.state_dict()
+            else:
+                state_dicts[model_name] = model.state_dict()
         return state_dicts
 
     @classmethod

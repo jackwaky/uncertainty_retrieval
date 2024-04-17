@@ -37,7 +37,7 @@
     "mode": "eval",
 
     "num_models": 2,
-    "model_path": "./experiments/CosMo_MCL_2_2024-04-15_0/",
+    "model_path": "./experiments/CosMo_MCL_2_2024-04-16_0/",
 
     "ambiguity": true,
     "visualize": false,

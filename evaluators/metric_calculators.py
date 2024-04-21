@@ -63,7 +63,8 @@ class ValidationMetricsCalculator:
         self._calculate_test_test_similarity_matrix()
 
         for query_idx in range(num_queries):
-            # print(f"Currnet query idx : {query_idx} among {num_queries}")
+            if query_idx % 1000 == 0:
+                print(f"Current query idx : {query_idx} among {num_queries}")
             # Initial selection based on relevance only
             query_similarity_scores = self.similarity_matrix[query_idx]
             selected = [torch.argmax(query_similarity_scores).item()]
@@ -93,7 +94,7 @@ class ValidationMetricsCalculator:
     def _calculate_recall_at_k(self):
         average_meter_set = AverageMeterSet()
         self.top_scores, self.most_similar_idx = self.similarity_matrix.topk(max(self.top_k))
-        # self.select_with_mmr(lambda_value=0.9)
+        self.select_with_mmr(lambda_value=0.5)
         self.top_scores_calculated = True
         topk_attribute_matching = np.take_along_axis(self.attribute_matching_matrix, self.most_similar_idx.numpy(),
                                                      axis=1)
@@ -110,7 +111,7 @@ class ValidationMetricsCalculator:
                 for idx in self.configs['visualized_image_idx']:
                     true_indices_ref[idx] = [idx]
                     matched_matrix = self.similarity_matrix[[idx]]
-                    true_indices_test[idx] = matched_matrix.topk(10, dim=1)[1].tolist()[0]
+                    true_indices_test[idx] = matched_matrix.topk(max(self.top_k), dim=1)[1].tolist()[0]
 
         recall_results = average_meter_set.averages()
         return recall_results, [true_indices_ref, true_indices_test]

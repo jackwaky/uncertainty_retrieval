@@ -37,9 +37,9 @@
     "mode": "eval",
 
     "num_models": 2,
-    "model_path": "./experiments/CosMo_MCL_2_2024-04-16_0/",
+    "model_path": "./experiments/CosMo_MCL_compositor_2024-04-17_0/",
 
-    "ambiguity": true,
+    "ambiguity": false,
     "visualize": false,
     "visualized_image_idx": [0,1,2]
 }

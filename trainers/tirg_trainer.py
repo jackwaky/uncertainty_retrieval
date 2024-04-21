@@ -103,7 +103,7 @@ class TIRGTrainer(AbstractBaseTrainer):
             self._update_grad()
                     # self._update_compositor_grad(model_idx=m)
 
-            break
+            # break
 
 
         # train_results = {i : average_meter_set[i].averages() for i in range(self.num_models)}

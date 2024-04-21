@@ -124,13 +124,12 @@ class AbstractBaseTrainer(ABC):
     def load_model(self):
         # model_path = './experiments/CosMo_2024-04-03_0/best.pth'
         model_path = self.configs['model_path']
-        for i in range(self.configs["num_models"]):
-            cur_model_path = os.path.join(model_path, str(i), "best.pth")
-            print(cur_model_path)
-            dict_of_models = torch.load(cur_model_path)[i]['model_state_dict']
-            keys = dict_of_models.keys()
-            for key in keys:
-                self.models[i][key].load_state_dict(dict_of_models[key])
+        cur_model_path = os.path.join(model_path, "best.pth")
+        print(cur_model_path)
+        dict_of_models = torch.load(cur_model_path)[0]['model_state_dict']
+        keys = dict_of_models.keys()
+        for key in keys:
+            self.models[key].load_state_dict(dict_of_models[key])
 
     def train_one_epoch(self, epoch) -> dict:
         raise NotImplementedError
@@ -148,6 +147,7 @@ class AbstractBaseTrainer(ABC):
                 else:
                     self._to_eval_mode()
                     all_val_results = {i : {} for i in range(self.configs["num_models"])}
+                    # all_val_results = {}
                     for model_idx in range(self.configs["num_models"]):
                         for key, evaluator in self.evaluators.items():
                             print('results on ' + key)

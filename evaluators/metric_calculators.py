@@ -48,52 +48,9 @@ class ValidationMetricsCalculator:
             self.similarity_matrix = self.composed_query_features.mm(self.test_features.t())
             self.similarity_matrix_calculated = True
 
-
-    def _calculate_test_test_similarity_matrix(self) -> torch.tensor:
-        if not self.test_test_similarity_matrix_calculated:
-            self.test_test_similarity_matrix = self.test_features.mm(self.test_features.t())
-            self.test_test_similarity_matrix_calculated = True
-
-    def select_with_mmr(self, lambda_value=0.5):
-        # Assuming self.similarity_matrix is already calculated
-        num_queries = self.num_query_features
-        num_items = self.num_test_features
-        selected_indices = torch.zeros(num_queries, max(self.top_k), dtype=torch.long)
-
-        self._calculate_test_test_similarity_matrix()
-
-        for query_idx in range(num_queries):
-            # print(f"Currnet query idx : {query_idx} among {num_queries}")
-            # Initial selection based on relevance only
-            query_similarity_scores = self.similarity_matrix[query_idx]
-            selected = [torch.argmax(query_similarity_scores).item()]
-
-            # Iteratively select items based on MMR
-            for _ in range(1, max(self.top_k)):
-                mmr_scores = torch.full((self.num_test_features,), -1e9, dtype=torch.float)
-                for item_idx in range(num_items):
-                    if item_idx not in selected:
-                        # Relevance
-                        relevance = query_similarity_scores[item_idx]
-                        # Diversity
-                        diversity = torch.max(self.test_test_similarity_matrix[item_idx, selected])
-                        # MMR Score
-                        mmr_score = lambda_value * relevance - (1 - lambda_value) * diversity
-                        mmr_scores[item_idx] = mmr_score
-
-                # Select item with highest MMR score
-                next_selected_idx = torch.argmax(torch.tensor(mmr_scores)).item()
-                selected.append(next_selected_idx)
-
-            selected_indices[query_idx] = torch.tensor(selected)
-
-        # Update most_similar_idx based on MMR selection
-        self.most_similar_idx = selected_indices
-
     def _calculate_recall_at_k(self):
         average_meter_set = AverageMeterSet()
         self.top_scores, self.most_similar_idx = self.similarity_matrix.topk(max(self.top_k))
-        # self.select_with_mmr(lambda_value=0.9)
         self.top_scores_calculated = True
         topk_attribute_matching = np.take_along_axis(self.attribute_matching_matrix, self.most_similar_idx.numpy(),
                                                      axis=1)

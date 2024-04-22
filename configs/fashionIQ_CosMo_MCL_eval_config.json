@@ -39,7 +39,7 @@
     "num_models": 2,
     "model_path": "./experiments/CosMo_MCL_compositor_2024-04-17_0/",
 
-    "ambiguity": false,
-    "visualize": false,
-    "visualized_image_idx": [0,1,2]
+    "ambiguity": true,
+    "visualize": true,
+    "visualized_image_idx": [0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30]
 }

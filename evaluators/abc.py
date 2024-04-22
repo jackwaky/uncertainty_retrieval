@@ -47,7 +47,7 @@ class AbstractBaseEvaluator(abc.ABC):
         # If Evaluation mode & want to Visualize the retrieved images
         if self.configs['mode'] == 'eval' and self.configs['visualize']:
             for image_idx in true_indices[0].keys():
-                self.save_retrieved_images(true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx)
+                self.save_retrieved_images(true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx, model_idx)
 
         return all_results, recall_calculator
 
@@ -133,7 +133,7 @@ class AbstractBaseEvaluator(abc.ABC):
         recall_results = average_meter_set.averages()
         return recall_results
 
-    def save_retrieved_images(self, true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx):
+    def save_retrieved_images(self, true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx, model_idx):
         matched_ref_attributes = [all_ref_attributes[idx] for idx in true_indices[0][image_idx]]
         matched_target_attributes = [all_query_attributes[idx] for idx in true_indices[0][image_idx]]
         matched_test_attributes = [all_test_attributes[idx] for idx in true_indices[1][image_idx]]
@@ -145,7 +145,7 @@ class AbstractBaseEvaluator(abc.ABC):
         retrieved_image_path_list = [f'{image_file_path}/{retrieved_attribute}.jpg' for retrieved_attribute in
                                      matched_test_attributes]
 
-        save_path = f"./visualize_result/{self.configs['experiment_description']}/{image_idx}"
+        save_path = f"./visualize_result/{self.configs['experiment_description']}/{image_idx}/model_{model_idx}"
         source_image_save_path = save_path + f'/{domain}/source_image/'
         answer_image_save_path = save_path + f'/{domain}/answer_image/'
         retrieved_image_save_path = save_path + f'/{domain}/retrieved_images/'

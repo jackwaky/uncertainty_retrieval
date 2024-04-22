@@ -37,7 +37,5 @@
     "mode": "train",
     "visualize": false,
     "ambiguity": false,
-
-
     "num_models": 2
 }

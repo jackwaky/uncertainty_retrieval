@@ -101,7 +101,7 @@ class ValidationMetricsCalculator:
         true_indices_ref, true_indices_test = {}, {}
         for k in self.top_k:
             query_matched_vector = topk_attribute_matching[:, :k].sum(axis=1).astype(bool)
-            self.recall_positive_queries_idxs[k] = list(np.where(query_matched_vector > 0)[0])
+            self.recall_positive_queries_idxs[k] = list(np.where(query_matched_vector > 0)[0]) # matched indexes
             num_correct = query_matched_vector.sum()
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)

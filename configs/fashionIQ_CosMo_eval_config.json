@@ -38,5 +38,5 @@
     "model_path": "./experiments/CosMo_2024-04-03_0/best.pth",
     "ambiguity": true,
     "visualize": true,
-    "visualized_image_idx": [0,1,2]
+    "visualized_image_idx": [18]
 }

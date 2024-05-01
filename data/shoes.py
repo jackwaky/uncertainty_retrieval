@@ -75,8 +75,11 @@ class ShoesDataset(AbstractBaseShoesDataset):
         modifier = self.caps_cat[idx]
         modifier = self.text_transform(modifier) if self.text_transform else modifier
 
-        ref_id = self.ref_img_path[idx].split('/')[-1].split('.')[0]
-        targ_id = self.targ_img_path[idx].split('/')[-1].split('.')[0]
+        # ref_id = self.ref_img_path[idx].split('/')[-1].split('.')[0]
+        # targ_id = self.targ_img_path[idx].split('/')[-1].split('.')[0]
+
+        ref_id = '/'.join(self.ref_img_path[idx].split('/')[3:]).split('.')[0]
+        targ_id = '/'.join(self.targ_img_path[idx].split('/')[3:]).split('.')[0]
 
         if self.id_transform:
             ref_id = self.id_transform(ref_id)
@@ -113,12 +116,16 @@ class ShoesTestDataset(AbstractBaseShoesDataset):
         self.img_list = text_file.readlines()
         self.img_paths_list = self.img_list[:] #new list of all paths
         self.img_paths_list = [imgpath.strip() for imgpath in self.img_paths_list]
-        self.img_list = [imgname.strip().split('/')[-1].split('.')[0] for imgname in self.img_list]
+        # self.img_list = [imgname.strip().split('/')[-1].split('.')[0] for imgname in self.img_list]
+        self.img_list = ['/'.join(imgname.strip().split('/')[3:]).split('.')[0] for imgname in self.img_list]
+        # '/'.join(self.targ_img_path[idx].split('/')[3:])
 
         for d in self.img_caption_data:
             self.img_paths_list.extend(d.strip().split(';')[:2])
-            ref = d.strip().split(';')[0].split('/')[-1].split('.')[0] #dress/xxx.jpg --> xxx
-            targ = d.strip().split(';')[1].split('/')[-1].split('.')[0] #dress/xxx.jpg --> xxx
+            # ref = d.strip().split(';')[0].split('/')[-1].split('.')[0] #dress/xxx.jpg --> xxx
+            # targ = d.strip().split(';')[1].split('/')[-1].split('.')[0] #dress/xxx.jpg --> xxx
+            ref = '/'.join(d.strip().split(';')[0].strip().split('/')[3:]).split('.')[0]
+            targ = '/'.join(d.strip().split(';')[1].strip().split('/')[3:]).split('.')[0]
             self.img_list.append(ref)
             self.img_list.append(targ)
         img_index = self.img_list.index
@@ -172,8 +179,11 @@ class ShoesTestQueryDataset(AbstractBaseShoesDataset):
 
         ref_img_path = self.ref_img_path[idx]
         ref_img = _get_img_from_path(ref_img_path, self.img_transform)
-        ref_id = self.ref_img_path[idx].split('/')[-1].split('.')[0]
-        targ_id = self.targ_img_path[idx].split('/')[-1].split('.')[0]
+        # ref_id = self.ref_img_path[idx].split('/')[-1].split('.')[0]
+        # targ_id = self.targ_img_path[idx].split('/')[-1].split('.')[0]
+
+        ref_id = '/'.join(self.ref_img_path[idx].split('/')[3:]).split('.')[0]
+        targ_id = '/'.join(self.targ_img_path[idx].split('/')[3:]).split('.')[0]
 
         modifier = self.caps_cat[idx]
 

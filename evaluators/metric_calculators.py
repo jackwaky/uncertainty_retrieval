@@ -3,6 +3,8 @@ import random
 import torch
 import numpy as np
 import wandb
+import os
+import json
 
 from utils.metrics import AverageMeterSet
 
@@ -10,7 +12,7 @@ from utils.metrics import AverageMeterSet
 class ValidationMetricsCalculator:
     def __init__(self, original_query_features: torch.tensor, composed_query_features: torch.tensor,
                  test_features: torch.tensor, attribute_matching_matrix: np.array,
-                 ref_attribute_matching_matrix: np.array, top_k: tuple, configs):
+                 ref_attribute_matching_matrix: np.array, top_k: tuple, configs, key):
         self.original_query_features = original_query_features
         self.composed_query_features = composed_query_features
         self.test_features = test_features
@@ -24,12 +26,15 @@ class ValidationMetricsCalculator:
         self.most_similar_idx = torch.zeros(self.num_query_features, max(top_k))
         self.recall_results = {}
         self.recall_positive_queries_idxs = {k: [] for k in top_k}
+        self.recall_negative_queries_idxs = {k: [] for k in top_k}
         self.similarity_matrix_calculated = False
         self.top_scores_calculated = False
 
         self.test_test_similarity_matrix_calculated = False
 
         self.configs = configs
+        self.key = key
+        self.domain = key.split('_')[-1]
 
     def __call__(self):
         self._calculate_similarity_matrix()
@@ -56,21 +61,69 @@ class ValidationMetricsCalculator:
                                                      axis=1)
 
         true_indices_ref, true_indices_test = {}, {}
+        unmatched_idx = {k: [] for k in self.top_k}
         for k in self.top_k:
             query_matched_vector = topk_attribute_matching[:, :k].sum(axis=1).astype(bool)
-            self.recall_positive_queries_idxs[k] = list(np.where(query_matched_vector > 0)[0])
+            self.recall_positive_queries_idxs[k] = [int(i) for i in np.where(query_matched_vector > 0)[0]]
+            self.recall_negative_queries_idxs[k] = [int(i) for i in np.where(query_matched_vector == 0)[0]]
+
+            if self.configs["mode"] == 'eval' and self.configs["log"]:
+                prev_matched_idx = self.load_idx(k, 'matched')
+                cur_matched_idx = self.recall_positive_queries_idxs[k]
+                cur_unmatched_idx = self.recall_negative_queries_idxs[k]
+
+                # # To compute difference between CosMo and MGUR
+                # intersection = list(set(prev_matched_idx) & set(cur_unmatched_idx))
+
+                unmatched_idx[k] = cur_matched_idx
+
             num_correct = query_matched_vector.sum()
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
 
-            if self.configs['mode'] == 'eval' and self.configs['visualize']:
-                for idx in self.configs['visualized_image_idx']:
+            if self.configs['mode'] == 'eval' and self.configs['visualize'] and k == 10:
+                # visualized_idx = self.configs['visualized_image_idx']
+                # visualized_idx = unmatched_idx[10]
+                # visualized_idx = self.load_idx(10, 'wrong')
+                visualized_idx = os.listdir(f"/home/jaehyun98/git/uncertain_retrieval/visualize_result/MGUR_eval/{self.domain}/intersection")
+                for idx in visualized_idx:
+                    idx = int(idx)
                     true_indices_ref[idx] = [idx]
                     matched_matrix = self.similarity_matrix[[idx]]
                     true_indices_test[idx] = matched_matrix.topk(10, dim=1)[1].tolist()[0]
 
+        if self.configs["mode"] == 'eval':
+            # save unmatched_idx
+            if self.configs["ambiguity"]:
+                self.save_idx(unmatched_idx, 'unmatched')
+            # save matched_idx
+            else:
+                self.save_idx(self.recall_positive_queries_idxs, 'matched')
+                self.save_idx(self.recall_negative_queries_idxs, 'wrong')
+
         recall_results = average_meter_set.averages()
         return recall_results, [true_indices_ref, true_indices_test]
+
+    def save_idx(self, indexes, prefix):
+        domain = self.key.split('_')[-1]
+        save_path = f"./visualize_result/{prefix}_{self.configs['experiment_description']}/{domain}"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        with open(f'{save_path}/log.json', 'w') as f:
+            json.dump(indexes, f, indent=4)
+
+    def load_idx(self, k, is_matched):
+        domain = self.key.split('_')[-1]
+        # file_path = f"./visualize_result/{is_matched}_{self.configs['experiment_description']}/{domain}/log.json"
+        file_path = f"./visualize_result/matched_CosMo_eval/{domain}/log.json"
+
+        with open(file_path, 'r') as f:
+            json_file = json.load(f)
+
+        cur_k_matched_idx = json_file[str(k)]
+        return cur_k_matched_idx
+
 
     @staticmethod
     def _multiple_index_from_attribute_list(attribute_list, indices):

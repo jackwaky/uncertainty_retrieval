@@ -37,7 +37,7 @@ class AbstractBaseEvaluator(abc.ABC):
 
         recall_calculator = ValidationMetricsCalculator(all_original_query_features, all_composed_query_features,
                                                         all_test_features, self.attribute_matching_matrix,
-                                                        self.ref_matching_matrix, self.top_k, self.configs)
+                                                        self.ref_matching_matrix, self.top_k, self.configs, key)
         recall_results, true_indices = recall_calculator()
         all_results.update(recall_results)
         print(all_results)
@@ -137,16 +137,22 @@ class AbstractBaseEvaluator(abc.ABC):
         matched_test_attributes = [all_test_attributes[idx] for idx in true_indices[1][image_idx]]
 
         domain = key.split('_')[-1]
-        image_file_path = f"./data/{self.configs['dataset']}/image_data/{domain}"
+        if self.configs["dataset"] == 'fashionIQ':
+            data_folder = 'image_data'
+            image_file_path = f"./data/{self.configs['dataset']}/{data_folder}/{domain}"
+        elif self.configs["dataset"] == 'shoes':
+            data_folder = 'attributedata'
+            image_file_path = f"./data/{self.configs['dataset']}/{data_folder}"
         source_image_path = f'{image_file_path}/{matched_ref_attributes[0]}.jpg'
         answer_image_path = f'{image_file_path}/{matched_target_attributes[0]}.jpg'
         retrieved_image_path_list = [f'{image_file_path}/{retrieved_attribute}.jpg' for retrieved_attribute in
                                      matched_test_attributes]
 
-        save_path = f"./visualize_result/{self.configs['experiment_description']}/{image_idx}"
-        source_image_save_path = save_path + f'/{domain}/source_image/'
-        answer_image_save_path = save_path + f'/{domain}/answer_image/'
-        retrieved_image_save_path = save_path + f'/{domain}/retrieved_images/'
+        PREFIX = 'intersection'
+        save_path = f"./visualize_result/{self.configs['experiment_description']}/{domain}/{PREFIX}/{image_idx}"
+        source_image_save_path = save_path + f'/source_image/'
+        answer_image_save_path = save_path + f'/answer_image/'
+        retrieved_image_save_path = save_path + f'/{PREFIX}_retrieved_images/'
 
         for directory in [save_path, source_image_save_path, answer_image_save_path, retrieved_image_save_path]:
             if not os.path.exists(directory):

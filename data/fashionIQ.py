@@ -48,17 +48,21 @@ def _get_modifier(img_caption_data, idx, reverse=False):
     cap1, cap2 = img_caption_pair['captions']
     return _create_modifier_from_attributes(cap1, cap2) if not reverse else _create_modifier_from_attributes(cap2, cap1)
 
-def _cat_captions(caps):
+def _cat_captions(caps, is_reverse):
     I = []
     for i in range(len(caps)):
         if i % 2 == 0:
-            I.append(_create_modifier_from_attributes(caps[i], caps[i+1]))
+            I.append(_create_modifier_from_attributes(caps[i], caps[i+1], is_reverse))
         else:
-            I.append(_create_modifier_from_attributes(caps[i], caps[i-1]))
+            I.append(_create_modifier_from_attributes(caps[i], caps[i-1], is_reverse))
+
     return I
 
-def _create_modifier_from_attributes(ref_attribute, targ_attribute):
-    return ref_attribute + " and " + targ_attribute
+def _create_modifier_from_attributes(ref_attribute, targ_attribute, is_reverse):
+    if is_reverse:
+        return "[REV] " + ref_attribute + " and " + targ_attribute
+    else:
+        return ref_attribute + " and " + targ_attribute
 
 def caption_post_process(s):
     return s.strip().replace('.', 'dotmark').replace('?', 'questionmark').replace('&', 'andmark').replace('*', 'starmark')
@@ -103,7 +107,8 @@ class FashionIQDataset(AbstractBaseFashionIQDataset):
         self.ref_img_path = np.array([ff.strip().split(';')[0] for ff in self.img_caption_data])
         self.targ_img_path = np.array([ff.strip().split(';')[1] for ff in self.img_caption_data])
         self.caps = [ff.strip('\n').split(';')[-1] for ff in self.img_caption_data]
-        self.caps_cat = _cat_captions(self.caps)
+        self.caps_cat = _cat_captions(self.caps, False)
+        self.caps_cat_rev = _cat_captions(self.caps, True)
         self.config = config
 
 
@@ -118,6 +123,10 @@ class FashionIQDataset(AbstractBaseFashionIQDataset):
         modifier = caption_post_process(modifier)
         modifier = self.text_transform(modifier) if self.text_transform else modifier
 
+        rev_modifier = self.caps_cat_rev[idx]
+        rev_modifier = caption_post_process(rev_modifier)
+        rev_modifier = self.text_transform(rev_modifier) if self.text_transform else rev_modifier
+
         ref_id = self.ref_img_path[idx].split('/')[-1].split('.')[0]
         targ_id = self.targ_img_path[idx].split('/')[-1].split('.')[0]
 
@@ -125,7 +134,7 @@ class FashionIQDataset(AbstractBaseFashionIQDataset):
             ref_id = self.id_transform(ref_id)
             targ_id = self.id_transform(targ_id)
 
-        return reference_img, target_img, modifier, len(modifier), ref_id, targ_id
+        return reference_img, target_img, modifier, len(modifier), rev_modifier, len(rev_modifier), ref_id, targ_id
 
     def __len__(self):
         return len(self.img_caption_data)# * 2
@@ -190,7 +199,7 @@ class FashionIQTestQueryDataset(AbstractBaseFashionIQDataset):
         self.ref_img_path = np.array([ff.strip().split(';')[0] for ff in self.img_caption_data])
         self.targ_img_path = np.array([ff.strip().split(';')[1] for ff in self.img_caption_data])
         self.caps = [ff.strip('\n').split(';')[-1] for ff in self.img_caption_data]
-        self.caps_cat = _cat_captions(self.caps)
+        self.caps_cat = _cat_captions(self.caps, False)
 
     def __getitem__(self, idx, use_transform=True):
         img_transform = self.img_transform if use_transform else None

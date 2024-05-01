@@ -49,11 +49,12 @@ class BertPaddingCollateFunction(object):
         self.tokenizer = AutoTokenizer.from_pretrained("roberta-base")
 
     def __call__(self, batch: List[tuple]):
-        reference_images, target_images, modifiers, lengths, ref_id, targ_id = zip(*batch)
+        reference_images, target_images, modifiers, lengths, rev_modifiers, rev_length, ref_id, targ_id = zip(*batch)
 
         reference_images = torch.stack(reference_images, dim=0)
         target_images = torch.stack(target_images, dim=0)
         seq_lengths = torch.tensor(lengths).long()
+        seq_rev_lengths = torch.tensor(rev_length).long()
 
         modifiers = list(modifiers)
         token = self.tokenizer.batch_encode_plus(modifiers, padding='longest', return_tensors='pt')
@@ -61,9 +62,14 @@ class BertPaddingCollateFunction(object):
         attn_mask = token['attention_mask']
         modifiers = token['input_ids']
 
+        rev_modifiers = list(rev_modifiers)
+        rev_token = self.tokenizer.batch_encode_plus(rev_modifiers, padding='longest', return_tensors='pt')
+        rev_attn_mask = rev_token['attention_mask']
+        rev_modifiers = rev_token['input_ids']
+
         # ref_id = torch.tensor(ref_id).long()
         # targ_id = torch.tensor(targ_id).long()
-        return reference_images, target_images, modifiers, seq_lengths, attn_mask
+        return reference_images, target_images, modifiers, seq_lengths, rev_modifiers, seq_rev_lengths, attn_mask, rev_attn_mask
 
 
 class BertPaddingCollateFunctionTest(object):

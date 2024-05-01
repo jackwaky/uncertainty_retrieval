@@ -21,9 +21,10 @@ class TIRGTrainer(AbstractBaseTrainer):
         average_meter_set = AverageMeterSet()
         train_dataloader = tqdm(self.train_dataloader, desc="Epoch {}".format(epoch))
 
-        for batch_idx, (ref_images, tar_images, modifiers, len_modifiers, attn_mask) in enumerate(train_dataloader):
+        for batch_idx, (ref_images, tar_images, modifiers, len_modifiers, rev_modifiers, len_rev_modifiers, attn_mask, rev_attn_mask) in enumerate(train_dataloader):
             ref_images, tar_images = ref_images.to(self.device), tar_images.to(self.device)
             modifiers, len_modifiers = modifiers.to(self.device), len_modifiers.to(self.device)
+            rev_modifiers, len_rev_modifiers = rev_modifiers.to(self.device), len_rev_modifiers.to(self.device)
 
             self._reset_grad()
             # Encode Target Images
@@ -32,22 +33,32 @@ class TIRGTrainer(AbstractBaseTrainer):
 
             # Encode and Fuse Reference Images with Texts
             ref_mid_features, _ = self.lower_image_encoder(ref_images)
+            ref_features = self.upper_image_encoder(ref_mid_features)
+
             if self.text_fc != None:
                 attn_mask = attn_mask.to(self.device)
                 text_features = self.text_encoder(modifiers, attn_mask)
                 text_features = self.text_fc(text_features)
+
+                rev_attn_mask = rev_attn_mask.to(self.device)
+                rev_text_features = self.text_encoder(rev_modifiers, rev_attn_mask)
+                rev_text_features = self.text_fc(rev_text_features)
             else:
                 text_features = self.text_encoder(modifiers, len_modifiers)
+                rev_text_features = self.text_encoder(rev_modifiers, len_rev_modifiers)
 
             composed_ref_features, _ = self.compositor(ref_mid_features, text_features)
             composed_ref_features = self.upper_image_encoder(composed_ref_features)
+
+            composed_rev_features, _ = self.compositor(tar_mid_features, rev_text_features)
+            composed_rev_features = self.upper_image_encoder(composed_rev_features)
 
             # Add Gaussian noisy to feature and compute Loss
             if self.augmenter != None:
                 augmented_tar_features = self.augmenter(tar_features)
                 loss = self.metric_loss(composed_ref_features, tar_features, augmented_tar_features, epoch)
             else:
-                loss = self.metric_loss(composed_ref_features, tar_features)
+                loss = self.metric_loss(composed_ref_features, tar_features, composed_rev_features, ref_features)
 
             loss.backward()
             average_meter_set.update('loss', loss.item())

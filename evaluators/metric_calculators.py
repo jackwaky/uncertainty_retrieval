@@ -86,12 +86,14 @@ class ValidationMetricsCalculator:
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
 
-            # Mean Average Precision
+            # Mean Average Precision, Mean Average Diverse Precision, Diversity Score
             precision_values = []
             diverse_precision_values = []
+            diversity_values = []
             for query_idx in range(num_samples):
                 average_precision_at_k = 0
                 diverse_precision_at_k = 0
+                diversity_score_at_k = 0
 
                 num_correct_per_query = topk_attribute_matching[query_idx, :k].sum().astype(bool).sum()
                 if num_correct_per_query == 1:
@@ -102,13 +104,16 @@ class ValidationMetricsCalculator:
                     assert(len(retrieved_indices)==retrieved_order)
 
                     candidate_scores = self.test_diversity_matrix[retrieved_indices[-1], retrieved_indices[:-1]].tolist()
-                    diverse_precision_at_k = min(candidate_scores) if retrieved_order != 1 else 1
+                    diversity_score_at_k = min(candidate_scores) if retrieved_order != 1 else 1
+                    diverse_precision_at_k = diversity_score_at_k * average_precision_at_k
 
                 precision_values.append(average_precision_at_k)
                 diverse_precision_values.append(diverse_precision_at_k)
+                diversity_values.append(diversity_score_at_k)
 
             average_meter_set.update('map_@{}'.format(k), sum(precision_values), n=num_samples)
-            average_meter_set.update('mdap_@{}'.format(k), sum(diverse_precision_values), n=num_samples)
+            average_meter_set.update('madp_@{}'.format(k), sum(diverse_precision_values), n=num_samples)
+            average_meter_set.update('div_@{}'.format(k), sum(diversity_values), n=num_correct)
 
             if self.configs['mode'] == 'eval' and self.configs['visualize'] and k == 10:
                 # visualized_idx = self.configs['visualized_image_idx']

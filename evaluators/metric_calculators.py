@@ -80,6 +80,16 @@ class ValidationMetricsCalculator:
             num_correct = query_matched_vector.sum()
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
+            
+            # Mean Average Precision
+            precision_values = []
+            for query_idx in range(num_samples):
+                num_correct = topk_attribute_matching[query_idx, :k].sum().astype(bool).sum()
+                precision_at_k = num_correct / (
+                            np.where(topk_attribute_matching[query_idx, :k])[0][0] + 1) if num_correct == 1 else 0
+                precision_values.append(precision_at_k)
+
+            average_meter_set.update('map_@{}'.format(k), sum(precision_values), n=num_samples)
 
             if self.configs['mode'] == 'eval' and self.configs['visualize'] and k == 10:
                 # visualized_idx = self.configs['visualized_image_idx']

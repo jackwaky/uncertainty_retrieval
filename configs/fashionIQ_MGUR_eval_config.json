@@ -37,7 +37,7 @@
     "mode": "eval",
     "model_path": "./experiments/MGUR_training_2024-04-22_1/best.pth",
     "ambiguity": false,
-    "visualize": true,
+    "visualize": false,
     "visualized_image_idx": [18],
-    "log": true
+    "log": false
 }

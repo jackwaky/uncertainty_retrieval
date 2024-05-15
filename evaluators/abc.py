@@ -40,7 +40,9 @@ class AbstractBaseEvaluator(abc.ABC):
                                                         self.ref_matching_matrix, self.top_k, self.configs, key)
         recall_results, true_indices = recall_calculator()
         all_results.update(recall_results)
-        print(all_results)
+
+        self.print_result(all_results)
+        # print(all_results)
 
         # If Evaluation mode & want to Visualize the retrieved images
         if self.configs['mode'] == 'eval' and self.configs['visualize']:
@@ -48,6 +50,18 @@ class AbstractBaseEvaluator(abc.ABC):
                 self.save_retrieved_images(true_indices, all_ref_attributes, all_query_attributes, all_test_attributes, key, image_idx)
 
         return all_results, recall_calculator
+
+    def print_result(self, recall_results):
+        metrics = sorted(set(key.split('_')[0] for key in recall_results.keys()))
+        ks = sorted(set(key.split('_')[1] for key in recall_results.keys()), key=lambda x: int(x[1:]))
+
+        # Print the formatted output
+        for metric in metrics:
+            print(f"{metric.upper()}")
+            print(" ".join(ks))
+            values = [f"{recall_results[f'{metric}_{k}']:.3f}" for k in ks]
+            print(" ".join(values))
+            print()  # Add a newline for better readability
 
     @abc.abstractmethod
     def _extract_image_features(self, images):

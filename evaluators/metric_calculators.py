@@ -8,7 +8,6 @@ import json
 
 from utils.metrics import AverageMeterSet
 
-
 class ValidationMetricsCalculator:
     def __init__(self, original_query_features: torch.tensor, composed_query_features: torch.tensor,
                  test_features: torch.tensor, attribute_matching_matrix: np.array,
@@ -38,6 +37,7 @@ class ValidationMetricsCalculator:
 
     def __call__(self):
         self._calculate_similarity_matrix()
+        self._calculate_test_diversity_matrix()
         # Filter query_feat == target_feat
         assert self.similarity_matrix.shape == self.ref_attribute_matching_matrix.shape
         self.similarity_matrix[self.ref_attribute_matching_matrix == True] = self.similarity_matrix.min() # make ref images in test set to min so that it could not be selected as a target image?
@@ -52,6 +52,11 @@ class ValidationMetricsCalculator:
         if not self.similarity_matrix_calculated:
             self.similarity_matrix = self.composed_query_features.mm(self.test_features.t())
             self.similarity_matrix_calculated = True
+
+    def _calculate_test_diversity_matrix(self) -> torch.tensor:
+
+        norm_test_features = self.test_features / self.test_features.norm(dim=1, keepdim=True)
+        self.test_diversity_matrix = ( 1 - norm_test_features.mm(norm_test_features.t())) / 2
 
     def _calculate_recall_at_k(self):
         average_meter_set = AverageMeterSet()
@@ -80,16 +85,30 @@ class ValidationMetricsCalculator:
             num_correct = query_matched_vector.sum()
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
-            
+
             # Mean Average Precision
             precision_values = []
+            diverse_precision_values = []
             for query_idx in range(num_samples):
-                num_correct = topk_attribute_matching[query_idx, :k].sum().astype(bool).sum()
-                precision_at_k = num_correct / (
-                            np.where(topk_attribute_matching[query_idx, :k])[0][0] + 1) if num_correct == 1 else 0
-                precision_values.append(precision_at_k)
+                average_precision_at_k = 0
+                diverse_precision_at_k = 0
+
+                num_correct_per_query = topk_attribute_matching[query_idx, :k].sum().astype(bool).sum()
+                if num_correct_per_query == 1:
+                    retrieved_order =  np.where(topk_attribute_matching[query_idx, :k])[0][0] + 1
+                    average_precision_at_k = num_correct_per_query / retrieved_order
+
+                    retrieved_indices = self.most_similar_idx[query_idx, :retrieved_order].tolist()
+                    assert(len(retrieved_indices)==retrieved_order)
+
+                    candidate_scores = self.test_diversity_matrix[retrieved_indices[-1], retrieved_indices[:-1]].tolist()
+                    diverse_precision_at_k = min(candidate_scores) if retrieved_order != 1 else 1
+
+                precision_values.append(average_precision_at_k)
+                diverse_precision_values.append(diverse_precision_at_k)
 
             average_meter_set.update('map_@{}'.format(k), sum(precision_values), n=num_samples)
+            average_meter_set.update('mdap_@{}'.format(k), sum(diverse_precision_values), n=num_samples)
 
             if self.configs['mode'] == 'eval' and self.configs['visualize'] and k == 10:
                 # visualized_idx = self.configs['visualized_image_idx']

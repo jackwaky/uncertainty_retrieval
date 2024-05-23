@@ -106,6 +106,36 @@ class ValidationMetricsCalculator:
             num_samples = len(query_matched_vector)
             average_meter_set.update('recall_@{}'.format(k), num_correct, n=num_samples)
 
+            # Mean Average Precision, Mean Average Diverse Precision, Diversity Score
+            precision_values = []
+            diverse_precision_values = []
+            diversity_values = []
+            for query_idx in range(num_samples):
+                average_precision_at_k = 0
+                diverse_precision_at_k = 0
+                diversity_score_at_k = 0
+
+                num_correct_per_query = topk_attribute_matching[query_idx, :k].sum().astype(bool).sum()
+                if num_correct_per_query == 1:
+                    retrieved_order = np.where(topk_attribute_matching[query_idx, :k])[0][0] + 1
+                    average_precision_at_k = num_correct_per_query / retrieved_order
+
+                    retrieved_indices = self.most_similar_idx[query_idx, :retrieved_order].tolist()
+                    assert (len(retrieved_indices) == retrieved_order)
+
+                    candidate_scores = self.test_diversity_matrix[
+                        retrieved_indices[-1], retrieved_indices[:-1]].tolist()
+                    diversity_score_at_k = min(candidate_scores) if retrieved_order != 1 else 1
+                    diverse_precision_at_k = diversity_score_at_k * average_precision_at_k
+
+                precision_values.append(average_precision_at_k)
+                diverse_precision_values.append(diverse_precision_at_k)
+                diversity_values.append(diversity_score_at_k)
+
+            average_meter_set.update('map_@{}'.format(k), sum(precision_values), n=num_samples)
+            average_meter_set.update('madp_@{}'.format(k), sum(diverse_precision_values), n=num_samples)
+            average_meter_set.update('div_@{}'.format(k), sum(diversity_values), n=num_correct)
+
             if self.configs['mode'] == 'eval' and self.configs['visualize']:
                 for idx in self.configs['visualized_image_idx']:
                     true_indices_ref[idx] = [idx]

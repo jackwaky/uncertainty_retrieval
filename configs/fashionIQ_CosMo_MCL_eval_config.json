@@ -27,7 +27,7 @@
     "topk": "1,5,10,50",
     "margin": 12,
     "dataset": "fashionIQ",
-    "wandb_project_name": "MGUR",
+    "wandb_project_name": "ACIR",
     "wandb_account_name": "cnrrnwogh12",
     "device_idx": "0",
     "experiment_description": "bert",
@@ -37,9 +37,9 @@
     "mode": "eval",
 
     "num_models": 2,
-    "model_path": "./experiments/CosMo_MCL_compositor_2024-04-17_0/",
+    "model_path": "./experiments/final/CosMo_MCL2_training_2024-05-20_0/",
 
-    "ambiguity": true,
-    "visualize": true,
-    "visualized_image_idx": [0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30]
+    "ambiguity": false,
+    "visualize": false,
+    "visualized_image_idx": [0]
 }

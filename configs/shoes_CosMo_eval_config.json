@@ -35,7 +35,7 @@
     "alpha_scale": 1,
     "beta_scale": 1,
     "mode": "eval",
-    "model_path": "./experiments/shoes_CosMo_training_2024-04-24_2/best.pth",
+    "model_path": "./experiments/final/shoes_CosMo_training_2024-04-24_2/best.pth",
     "ambiguity": false,
     "visualize": true,
     "visualized_image_idx": [0],

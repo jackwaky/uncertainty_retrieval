@@ -35,7 +35,7 @@
     "alpha_scale": 1,
     "beta_scale": 1,
     "mode": "eval",
-    "model_path": "./experiments/MGUR_training_2024-04-22_1/best.pth",
+    "model_path": "./experiments/final/MGUR_training_2024-04-22_1/best.pth",
     "ambiguity": false,
     "visualize": false,
     "visualized_image_idx": [18],

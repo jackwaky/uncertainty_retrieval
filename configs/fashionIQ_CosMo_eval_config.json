@@ -35,9 +35,9 @@
     "alpha_scale": 1,
     "beta_scale": 1,
     "mode": "eval",
-    "model_path": "./experiments/CosMo_2024-04-03_0/best.pth",
-    "ambiguity": false,
-    "visualize": true,
+    "model_path": "./experiments/final/CosMo_training_2024-04-22_1/best.pth",
+    "ambiguity": true,
+    "visualize": false,
     "visualized_image_idx": [0],
     "log": false
 }

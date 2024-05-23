@@ -33,6 +33,7 @@ class ValidationMetricsCalculator:
 
     def __call__(self):
         self._calculate_similarity_matrix()
+        self._calculate_test_diversity_matrix()
         # Filter query_feat == target_feat
         assert self.similarity_matrix.shape == self.ref_attribute_matching_matrix.shape
         self.similarity_matrix[self.ref_attribute_matching_matrix == True] = self.similarity_matrix.min() # make ref images in test set to min so that it could not be selected as a target image?
@@ -89,6 +90,12 @@ class ValidationMetricsCalculator:
 
         # Update most_similar_idx based on MMR selection
         self.most_similar_idx = selected_indices
+
+
+    def _calculate_test_diversity_matrix(self) -> torch.tensor:
+
+        norm_test_features = self.test_features / self.test_features.norm(dim=1, keepdim=True)
+        self.test_diversity_matrix = ( 1 - norm_test_features.mm(norm_test_features.t())) / 2
 
     def _calculate_recall_at_k(self):
         average_meter_set = AverageMeterSet()
